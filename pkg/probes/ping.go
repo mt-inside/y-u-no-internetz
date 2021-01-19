@@ -14,12 +14,12 @@ import (
 	"golang.org/x/net/ipv4"
 )
 
-const targetIP = "1.1.1.1"
-
 func Ping(ctx context.Context, log logr.Logger, period time.Duration) {
-	log = log.WithName("ping")
+	target := "1.1.1.1"
 
-	c, targetAddr, err := makePingSocket(log, targetIP)
+	log = log.WithName("ping").WithValues("target", target)
+
+	c, targetAddr, err := makePingSocket(log, target)
 	if err != nil {
 		log.Error(err, "Coundn't make a socket for ping operations")
 		return
@@ -60,7 +60,7 @@ func Ping(ctx context.Context, log logr.Logger, period time.Duration) {
 
 		switch pong.Type {
 		case ipv4.ICMPTypeEchoReply:
-			log.Info("ok", "host", peer)
+			log.Info("ok")
 		default:
 			log.Error(errors.New("Expecting icmp echo reply"), "Unknown ICMP packet type", "got", pong)
 		}

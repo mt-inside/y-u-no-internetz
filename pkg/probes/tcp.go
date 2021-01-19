@@ -19,7 +19,9 @@ import (
 
 /* Tests the three-way handshake */
 func Tcp(stopCtx context.Context, log logr.Logger, period time.Duration) {
-	log = log.WithName("tcp")
+	target := "1.1.1.1:80"
+
+	log = log.WithName("tcp").WithValues("target", target)
 
 	tick := time.NewTicker(period)
 	for range tick.C {
@@ -37,7 +39,11 @@ func Tcp(stopCtx context.Context, log logr.Logger, period time.Duration) {
 * Need to tie requests to replies, so we know when it fails. Send an int to the far end, expect it to come back within 5s? How to model that?
  */
 func Udp(stopCtx context.Context, log logr.Logger, period time.Duration) {
-	log = log.WithName("udp")
+	//target := "1.1.1.1:53"
+	target := "127.0.0.1:1234"
+	payload := "hi"
+
+	log = log.WithName("udp").WithValues("target", target)
 
 	tick := time.NewTicker(period)
 	for range tick.C {
@@ -55,7 +61,9 @@ func Stream() {
 }
 
 func Http(stopCtx context.Context, log logr.Logger, period time.Duration) {
-	log = log.WithName("http")
+	target := "http://172.217.169.68/robots.txt"
+
+	log = log.WithName("http").WithValues("target", target)
 
 	tick := time.NewTicker(period)
 	for range tick.C {
@@ -85,7 +93,7 @@ func Http(stopCtx context.Context, log logr.Logger, period time.Duration) {
 		}
 		ctx = httptrace.WithClientTrace(ctx, trace)
 
-		req, _ := http.NewRequestWithContext(ctx, "HEAD", "http://172.217.169.68/robots.txt", nil)
+		req, _ := http.NewRequestWithContext(ctx, "HEAD", target, nil)
 
 		reqStart = time.Now()
 		resp, err := trans.RoundTrip(req)
@@ -151,7 +159,7 @@ func RecursiveDns(stopCtx context.Context, log logr.Logger, period time.Duration
 	tick := time.NewTicker(period)
 	for range tick.C {
 		for a, r := range rs {
-			log := log.WithValues("server", a)
+			log := log.WithValues("target", a)
 
 			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 
