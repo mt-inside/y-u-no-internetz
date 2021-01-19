@@ -53,6 +53,10 @@ func Ping(ctx context.Context, log logr.Logger, period time.Duration) {
 			log.Error(err, "Counldn't receive icmp echo reply")
 			return
 		}
+		if peerHost, _, _ := net.SplitHostPort(peer.String()); peerHost != target {
+			log.Error(fmt.Errorf("Target was %s but peer reported as %s", target, peer), "Reply from unexpected place")
+			return
+		}
 		pong, err := icmp.ParseMessage(ipv4.ICMPTypeEchoReply.Protocol(), pongb[:n])
 		if err != nil {
 			log.Error(err, "Couldn't parse icmp echo reply packet")
