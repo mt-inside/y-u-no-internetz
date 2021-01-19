@@ -61,11 +61,39 @@ func Udp(stopCtx context.Context, log logr.Logger, period time.Duration) {
 
 		conn, err := d.DialContext(ctx, "udp", target)
 		if err != nil {
-			log.Error(err, "down")
-		} else {
-			conn.Close()
-			log.Info("ok - false result!")
+			log.Error(err, "down", "stage", "dial")
+			cancel()
+			continue
 		}
+
+		if err := conn.SetDeadline(deadline); err != nil {
+			log.Error(err, "Unable to set UDP read and write deadlines") // permanent error; quit
+			cancel()
+			return
+		}
+
+		if _, err := conn.Write([]byte(payload)); err != nil {
+			log.Error(err, "down", "stage", "write")
+			cancel()
+			continue
+		}
+
+		buf := make([]byte, 1024)
+		n, err := conn.Read(buf)
+		if err != nil {
+			log.Error(err, "down", "stage", "read")
+			cancel()
+			continue
+		}
+		if n != len(payload) { // permanent; quit
+			log.Error(fmt.Errorf("Recv'd %s, expected: %s", string(buf), payload), "Got wrong payload back from echo server")
+			cancel()
+			return
+		}
+
+		log.Info("ok")
+
+		cancel() // TODO factor
 	}
 }
 
