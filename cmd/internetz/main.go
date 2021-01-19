@@ -49,7 +49,13 @@ func main() {
 	* - don't really want to bring all results back to main thread? each package should manage its own prom and errors (knows what's transient and what's not)
 	* - don't want a startup error in one loop to quit the whole thing, just log and let that goroutine return so that one doesn't run
 	* - don't want a run-time error in one loop to stop the whole thing, just try to recover
-	* - so actually this doesn't want observables, but still play with the pattern
+	* - so actually this doesn't want observables, but still play with the pattern in an example
+	* - but there is a stream of events that each probe has to deal with
+	*   - value(ok) - all good; don't log, metrics
+	*   - value(down) - expected, transient; don't crash, log (in the sense of user interface), metrics
+	*   - error - unexpected, permanent, eg no permissions to make socket, can't set read deadline; perform graceful shutdown (to alert a human); log at error
+	*   - done - you asked me to gracefully shutdown and how I'm done - you can block waiting for this value
+	*   - so yanno, thread->main needs error and done ch, like the graceful shutdown example. It probably does also wanna send values, cause it can go through an metrics middleware, which just don't pass them to main (use RxGo)
 	* design the algorithm for sending on the second, matching up replies, raising an error if they don't return within n (irellevant of other replies overtaking them)
 	* - think about it yourself
 	*   - initial idea: send each req on a goroutine, spawn them on the second, pass them a 5s ctx and use that with an async or cancellable recv()
