@@ -1,6 +1,8 @@
 # y u no internetz
 internet, u ok hun?
 
+WIP.
+
 ## Permissions
 `internetz` tries to send pings, which (possibly) needs elevated permissions.
 
