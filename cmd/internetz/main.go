@@ -4,8 +4,10 @@ import (
 	"context"
 	"flag"
 	"log"
+	"net"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -33,6 +35,8 @@ func main() {
 	log.Info("Starting")
 
 	signalCh := installSignalHandlers(log)
+
+	printNetInfo(log)
 
 	/* on that observable thing:
 	* * make a table of what return, panic(), os.exit, etc do on background goroutines
@@ -131,4 +135,53 @@ func installSignalHandlers(log logr.Logger) <-chan struct{} {
 	}()
 
 	return stopCh
+}
+
+func printNetInfo(log logr.Logger) {
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		log.Error(err, "Can't show system network interfaces")
+		return
+	}
+
+	for _, iface := range ifaces {
+		if ifaceExclude(iface) {
+			continue
+		}
+
+		addrs, _ := iface.Addrs()
+		for _, addr := range addrs {
+			if addr.(*net.IPNet).IP.To4() == nil {
+				continue
+			}
+			log.Info("Interface", "number", iface.Index, "name", iface.Name, "addr", addr.String(), "flags", iface.Flags)
+		}
+	}
+
+	log.Info("Default iface", "addr", getDefaultIP())
+
+	log.Info("External IP and netblock's AS etc", "details", "TODO")
+}
+
+func ifaceExclude(iface net.Interface) bool {
+	if strings.HasPrefix(iface.Name, "veth") {
+		return true
+	} else if strings.HasPrefix(iface.Name, "lo") {
+		return true
+	}
+
+	return false
+}
+
+func getDefaultIP() string {
+	conn, err := net.Dial("udp", "8.8.8.8:53")
+	if err != nil {
+		log.Println(err)
+		return "<unknown>"
+	}
+	defer conn.Close()
+
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+
+	return localAddr.IP.String()
 }
