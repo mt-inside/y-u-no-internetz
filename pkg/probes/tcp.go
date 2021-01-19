@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/go-ping/ping"
 )
 
 /* for the async ones, rip off the general structure of go-ping -->
@@ -19,7 +18,7 @@ import (
  */
 
 /* Tests the three-way handshake */
-func Tcp(ctx context.Context, log logr.Logger, period time.Duration) {
+func Tcp(stopCtx context.Context, log logr.Logger, period time.Duration) {
 	log = log.WithName("tcp")
 
 	tick := time.NewTicker(period)
@@ -37,7 +36,7 @@ func Tcp(ctx context.Context, log logr.Logger, period time.Duration) {
 /* FIXME: actually need to send something. Need a UDP echo service running somewhere (or just hit a DNS server and expect an error packet).
 * Need to tie requests to replies, so we know when it fails. Send an int to the far end, expect it to come back within 5s? How to model that?
  */
-func Udp(ctx context.Context, log logr.Logger, period time.Duration) {
+func Udp(stopCtx context.Context, log logr.Logger, period time.Duration) {
 	log = log.WithName("udp")
 
 	tick := time.NewTicker(period)
@@ -55,36 +54,7 @@ func Udp(ctx context.Context, log logr.Logger, period time.Duration) {
 func Stream() {
 }
 
-/* FIXME: what to do when we don't get a reply? They have a method for that? Hook OnSend? If no, see UDP.
-* Consider ripping this library off, there's no too much to it. */
-func Icmp(ctx context.Context, log logr.Logger, period time.Duration) {
-	log = log.WithName("ping")
-
-	defer func() {
-		if r := recover(); r != nil {
-			log.Info("Recovered")
-		}
-	}()
-
-	pinger, err := ping.NewPinger("1.1.1.1")
-	if err != nil {
-		log.Error(err, "Couldn't set up pinger")
-	}
-	pinger.SetNetwork("ip4")
-	pinger.SetPrivileged(true) // Direct mapping true => ICMP
-	pinger.Interval = period
-
-	pinger.OnRecv = func(p *ping.Packet) {
-		log.Info("ok", "latency", p.Rtt)
-	}
-
-	err = pinger.Run()
-	if err != nil {
-		log.Error(err, "Failure when pinging. This is assumed non-transient; no more pings will be attempted")
-	}
-}
-
-func Http(ctx context.Context, log logr.Logger, period time.Duration) {
+func Http(stopCtx context.Context, log logr.Logger, period time.Duration) {
 	log = log.WithName("http")
 
 	tick := time.NewTicker(period)
@@ -144,7 +114,7 @@ func Http(ctx context.Context, log logr.Logger, period time.Duration) {
 	}
 }
 
-func RecursiveDns(ctx context.Context, log logr.Logger, period time.Duration) {
+func RecursiveDns(stopCtx context.Context, log logr.Logger, period time.Duration) {
 	log = log.WithName("dns")
 
 	getResolver := func(host string) *net.Resolver {

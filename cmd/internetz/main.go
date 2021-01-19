@@ -34,8 +34,6 @@ func main() {
 
 	signalCh := installSignalHandlers(log)
 
-	//net.Ping(log, "8.8.8.8")
-
 	/* on that observable thing:
 	* * make a table of what return, panic(), os.exit, etc do on background goroutines
 	* * can i `foo = go lol()` or `go foo = lol()`?
