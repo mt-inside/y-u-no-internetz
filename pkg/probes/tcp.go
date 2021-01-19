@@ -180,6 +180,7 @@ func RecursiveDns(stopCtx context.Context, log logr.Logger, period time.Duration
 	}
 
 	/* TODO: find and print default resolver address */
+	//TODO: make these a type with the name, addr, resolver, log.WithValues, and a Probe() method
 	rs := map[string]*net.Resolver{
 		"default": net.DefaultResolver,
 		"cpe":     getResolver("192.168.69.1"),
