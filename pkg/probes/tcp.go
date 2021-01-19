@@ -2,6 +2,7 @@ package probes
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
 	"net/http/httptrace"
@@ -25,7 +26,10 @@ func Tcp(stopCtx context.Context, log logr.Logger, period time.Duration) {
 
 	tick := time.NewTicker(period)
 	for range tick.C {
-		conn, err := net.Dial("tcp", "1.1.1.1:80")
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		d := net.Dialer{}
+
+		conn, err := d.DialContext(ctx, "tcp", target)
 		if err != nil {
 			log.Error(err, "down")
 		} else {
@@ -47,7 +51,11 @@ func Udp(stopCtx context.Context, log logr.Logger, period time.Duration) {
 
 	tick := time.NewTicker(period)
 	for range tick.C {
-		conn, err := net.Dial("udp", "1.1.1.1:53")
+		deadline := time.Now().Add(5 * time.Second)
+		ctx, cancel := context.WithDeadline(context.Background(), deadline)
+		d := net.Dialer{}
+
+		conn, err := d.DialContext(ctx, "udp", target)
 		if err != nil {
 			log.Error(err, "down")
 		} else {
@@ -161,7 +169,7 @@ func RecursiveDns(stopCtx context.Context, log logr.Logger, period time.Duration
 		for a, r := range rs {
 			log := log.WithValues("target", a)
 
-			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 
 			ts := time.Now()
 			_, err := r.LookupHost(ctx, "www.google.com")
