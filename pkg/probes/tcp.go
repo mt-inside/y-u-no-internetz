@@ -1,4 +1,4 @@
-package internetz
+package probes
 
 import (
 	"context"

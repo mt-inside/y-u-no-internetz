@@ -15,7 +15,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/mt-inside/y-u-no-internetz/pkg/internetz"
+	"github.com/mt-inside/y-u-no-internetz/pkg/probes"
 )
 
 var (
@@ -57,21 +57,20 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	// TODO rename package to tests
-	go internetz.Stream()
+	go probes.Stream()
 
 	//TODO: these things should return a done channel, which graceful shutdown can wait for (see graceful shutdown ex; they're just not gonna send errors down it)
-	go internetz.Tcp(ctx, log, 1*time.Second)
+	go probes.Tcp(ctx, log, 1*time.Second)
 
-	go internetz.Udp(ctx, log, 1*time.Second)
+	go probes.Udp(ctx, log, 1*time.Second)
 
-	go internetz.Icmp(ctx, log, 1*time.Second)
+	go probes.Ping(ctx, log, 1*time.Second)
 
 	// TODO renane to Dns.
 	// TODO actualy make sure it *doesn't* recurse - we just wanna know if our connection to that server is up, not if it can reach other stuff
-	go internetz.RecursiveDns(ctx, log, 1*time.Second)
+	go probes.RecursiveDns(ctx, log, 1*time.Second)
 
-	go internetz.Http(ctx, log, 1*time.Second)
+	go probes.Http(ctx, log, 1*time.Second)
 
 	log.Info("Running")
 	<-signalCh // this is the only thing that stops this programme; all the check loops swallow errors and try to recover

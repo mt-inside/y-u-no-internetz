@@ -1,9 +1,9 @@
-package net
+package probes
 
 import (
 	"errors"
 	"fmt"
-	gonet "net"
+	"net"
 	"os"
 
 	"github.com/davecgh/go-spew/spew"
@@ -60,8 +60,8 @@ func Ping(log logr.Logger, targetIP string) {
 	}
 }
 
-func makePingSocket(log logr.Logger, targetIP string) (*icmp.PacketConn, gonet.Addr, error) {
-	var targetAddr gonet.Addr
+func makePingSocket(log logr.Logger, targetIP string) (*icmp.PacketConn, net.Addr, error) {
+	var targetAddr net.Addr
 
 	/* First, try a "ping socket". These are a special mode of socket that allow only limited ICMP echo request and reply transactions, but require no privleges, bar our GID being in the range in net.ipv4.ping_group_range
 	 */
@@ -69,7 +69,7 @@ func makePingSocket(log logr.Logger, targetIP string) (*icmp.PacketConn, gonet.A
 	if err != nil {
 		log.Info("couldn't make ping-socket (dgram) icmp socket, falling back to raw socket. Check that this process's group id is within the range in net.ipv4.ping_group_range", "primary group", os.Getgid(), "error", err)
 	} else {
-		targetAddr = &gonet.UDPAddr{IP: gonet.ParseIP(targetIP)}
+		targetAddr = &net.UDPAddr{IP: net.ParseIP(targetIP)}
 	}
 
 	if c == nil {
@@ -80,7 +80,7 @@ func makePingSocket(log logr.Logger, targetIP string) (*icmp.PacketConn, gonet.A
 		if err != nil {
 			return nil, nil, fmt.Errorf("couldn't make raw icmp socket: %w", err)
 		} else {
-			targetAddr = &gonet.IPAddr{IP: gonet.ParseIP(targetIP)}
+			targetAddr = &net.IPAddr{IP: net.ParseIP(targetIP)}
 		}
 	}
 
