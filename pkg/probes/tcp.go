@@ -32,10 +32,14 @@ func Tcp(stopCtx context.Context, log logr.Logger, period time.Duration) {
 		conn, err := d.DialContext(ctx, "tcp", target)
 		if err != nil {
 			log.Error(err, "down")
-		} else {
-			conn.Close()
-			log.Info("ok")
+			cancel()
+			continue
 		}
+
+		conn.Close() // TODO factor
+		log.Info("ok")
+
+		cancel() // TODO factor
 	}
 }
 
@@ -105,6 +109,8 @@ func Http(stopCtx context.Context, log logr.Logger, period time.Duration) {
 
 		reqStart = time.Now()
 		resp, err := trans.RoundTrip(req)
+		reqDone = time.Now()
+
 		if err != nil || resp.StatusCode != 200 {
 			log.Error(
 				err,
@@ -114,18 +120,20 @@ func Http(stopCtx context.Context, log logr.Logger, period time.Duration) {
 				"wrote req", wroteReq.Sub(reqStart),
 				"1st byte", firstByte.Sub(reqStart),
 			)
-		} else {
-			reqDone = time.Now()
-			resp.Body.Close()
-			log.Info(
-				"ok",
-				"conn start", connStart.Sub(reqStart),
-				"conn done", connDone.Sub(reqStart),
-				"wrote req", wroteReq.Sub(reqStart),
-				"1st byte", firstByte.Sub(reqStart),
-				"done", reqDone.Sub(reqStart),
-			)
+			cancel()
+			continue
 		}
+
+		resp.Body.Close()
+		log.Info(
+			"ok",
+			"conn start", connStart.Sub(reqStart),
+			"conn done", connDone.Sub(reqStart),
+			"wrote req", wroteReq.Sub(reqStart),
+			"1st byte", firstByte.Sub(reqStart),
+			"done", reqDone.Sub(reqStart),
+		)
+
 		cancel() // TODO factor method
 	}
 }
@@ -178,9 +186,10 @@ func RecursiveDns(stopCtx context.Context, log logr.Logger, period time.Duration
 			cancel() // factor out so we can defer this
 			if err != nil {
 				log.Error(err, "down")
-			} else {
-				log.Info("ok", "latency", latency)
+				continue
 			}
+
+			log.Info("ok", "latency", latency)
 		}
 	}
 }
